@@ -3,17 +3,15 @@ import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
-import SelfHostedUpdates, { SelfHostedUpdateConfig, ReleaseChannel } from 'openexpoota-client';
-
-import { useColorScheme } from '@/hooks/useColorScheme';
+import SelfHostedUpdates, { SelfHostedUpdateConfig, ReleaseChannel } from 'open-expo-ota';
+import { useColorScheme } from '../hooks/useColorScheme';
 
 // Initialize the updates system
 const updatesConfig: SelfHostedUpdateConfig = {
-  apiUrl: 'http://localhost:3000',
-  appSlug: 'test-expo-app',
-  appKey: 'test-app-key',
-  channel: ReleaseChannel.DEVELOPMENT,
-  checkOnLaunch: true,
+  backendUrl: 'http://localhost:3000/api',
+  appSlug: 'test-app',
+  channel: ReleaseChannel.PRODUCTION,
+  checkOnLaunch: false, // We'll handle this manually in the UpdatesScreen
   autoInstall: false,
   debug: true
 };
@@ -36,6 +34,7 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="updates" options={{ title: 'OTA Updates' }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

@@ -1,279 +1,220 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, TouchableOpacity, View, Text, ScrollView, Alert } from 'react-native';
-import SelfHostedUpdates, { ReleaseChannel } from 'openexpoota-client';
-import Constants from 'expo-constants';
-
-// Initialize the updates system
-const updates = new SelfHostedUpdates({
-  apiUrl: 'http://localhost:3000',
-  appSlug: 'test-expo-app',
-  appKey: 'test-app-key',
-  channel: ReleaseChannel.DEVELOPMENT,
-  checkOnLaunch: false, // We'll handle checking manually
-  autoInstall: false,
-  debug: true
-});
+import { View, Text, StyleSheet, Button, ActivityIndicator, ScrollView } from 'react-native';
+import { Stack } from 'expo-router';
+import SelfHostedUpdates, {
+  UpdateEvent,
+  UpdateEventListener,
+  ReleaseChannel
+} from 'open-expo-ota';
 
 export default function UpdatesScreen() {
-  const [isChecking, setIsChecking] = useState(false);
-  const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
-  const [updateInfo, setUpdateInfo] = useState<any>(null);
-  const [error, setError] = useState<Error | null>(null);
-  const [progress, setProgress] = useState<number | null>(null);
-  const [lastCheckTime, setLastCheckTime] = useState<Date | null>(null);
+  const [status, setStatus] = useState<string>('Idle');
+  const [message, setMessage] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
+  const [events, setEvents] = useState<string[]>([]);
 
-  // Set up event listener
   useEffect(() => {
-    const removeListener = updates.addEventListener((event) => {
-      console.log('Update event:', event.type);
+    // Initialize the updates client
+    const updatesClient = new SelfHostedUpdates({
+      backendUrl: 'http://localhost:3000/api',
+      appSlug: 'test-app',
+      runtimeVersion: '1.1.0',
+      channel: ReleaseChannel.PRODUCTION,
+      checkOnLaunch: false, // We'll manually check for updates
+      autoInstall: false,   // We'll manually install updates
+      debug: true           // Enable debug logs
+    });
+
+    // Event listener
+    const listener: UpdateEventListener = (event: UpdateEvent) => {
+      const timestamp = new Date().toLocaleTimeString();
+      const eventLog = `[${timestamp}] ${event.type}`;
+
+      setEvents(prev => [...prev, eventLog]);
 
       switch (event.type) {
         case 'checking':
-          setIsChecking(true);
-          setError(null);
+          setStatus('Checking');
+          setMessage('Checking for updates...');
+          setLoading(true);
           break;
-
         case 'updateAvailable':
-          setIsChecking(false);
-          setIsUpdateAvailable(true);
-          setUpdateInfo(event.manifest);
-          setLastCheckTime(new Date());
+          setStatus('Available');
+          setMessage(`Update available: ${event.manifest.version}`);
+          setLoading(false);
           break;
-
         case 'updateNotAvailable':
-          setIsChecking(false);
-          setIsUpdateAvailable(false);
-          setLastCheckTime(new Date());
-          Alert.alert('No Updates', 'Your app is up to date!');
+          setStatus('Up to date');
+          setMessage('No updates available');
+          setLoading(false);
           break;
-
-        case 'error':
-          setIsChecking(false);
-          setError(event.error);
-          Alert.alert('Error', `Failed to check for updates: ${event.error.message}`);
-          break;
-
         case 'downloadStarted':
-          setProgress(0);
+          setStatus('Downloading');
+          setMessage('Downloading update...');
+          setLoading(true);
           break;
-
-        case 'downloadProgress':
-          if (event.progress !== undefined) {
-            setProgress(event.progress);
-          }
-          break;
-
         case 'downloadFinished':
-          setProgress(1);
-          Alert.alert('Ready to Install', 'Update is ready to install!');
+          setStatus('Downloaded');
+          setMessage('Update downloaded successfully');
+          setLoading(false);
           break;
-
         case 'installed':
-          setIsUpdateAvailable(false);
-          setUpdateInfo(null);
-          setProgress(null);
+          setStatus('Installed');
+          setMessage('Update installed successfully');
+          setLoading(false);
+          break;
+        case 'error':
+          setStatus('Error');
+          setMessage(`Error: ${event.error.message}`);
+          setLoading(false);
           break;
       }
-    });
+    };
 
-    // Clean up the listener when component unmounts
-    return () => removeListener();
+    // Register listener
+    const unsubscribe = updatesClient.addEventListener(listener);
+
+    // Save the client to window for debugging
+    // @ts-ignore
+    global.updatesClient = updatesClient;
+
+    // Clean up
+    return () => {
+      unsubscribe();
+      // @ts-ignore
+      delete global.updatesClient;
+    };
   }, []);
 
-  // Check for updates
   const checkForUpdates = async () => {
     try {
-      await updates.checkForUpdates();
-    } catch (err) {
-      console.error('Failed to check for updates:', err);
-      setError(err instanceof Error ? err : new Error(String(err)));
+      // @ts-ignore
+      await global.updatesClient.checkForUpdates();
+    } catch (error) {
+      setStatus('Error');
+      setMessage(`Error checking for updates: ${error.message}`);
     }
   };
 
-  // Download update
   const downloadUpdate = async () => {
     try {
-      await updates.downloadUpdate();
-    } catch (err) {
-      console.error('Failed to download update:', err);
-      setError(err instanceof Error ? err : new Error(String(err)));
+      // @ts-ignore
+      await global.updatesClient.downloadUpdate();
+    } catch (error) {
+      setStatus('Error');
+      setMessage(`Error downloading update: ${error.message}`);
     }
   };
 
-  // Apply update
   const applyUpdate = () => {
     try {
-      updates.applyUpdate();
-    } catch (err) {
-      console.error('Failed to apply update:', err);
-      setError(err instanceof Error ? err : new Error(String(err)));
+      // @ts-ignore
+      global.updatesClient.applyUpdate();
+    } catch (error) {
+      setStatus('Error');
+      setMessage(`Error applying update: ${error.message}`);
     }
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      <Text style={styles.title}>OTA Updates</Text>
-
-      <View style={styles.infoBox}>
-        <Text style={styles.infoText}>App Version: {Constants.expoConfig?.version || '1.0.0'}</Text>
-        <Text style={styles.infoText}>Platform: {Constants.platform?.ios ? 'iOS' : 'Android'}</Text>
-      </View>
+    <View style={styles.container}>
+      <Stack.Screen options={{ title: 'OTA Updates' }} />
 
       <View style={styles.statusContainer}>
-        <Text style={styles.subtitle}>Update Status</Text>
-        <Text style={styles.statusText}>Status: {
-          isChecking ? 'Checking...' :
-          isUpdateAvailable ? 'Update Available!' :
-          'Up to date'
-        }</Text>
-
-        {error && (
-          <View style={styles.errorBox}>
-            <Text style={styles.errorText}>Error: {error.message}</Text>
-          </View>
-        )}
-
-        {updateInfo && (
-          <View style={styles.infoBox}>
-            <Text style={styles.infoText}>Channel: {updateInfo.channel || '-'}</Text>
-            <Text style={styles.infoText}>Version: {updateInfo.version || '-'}</Text>
-            <Text style={styles.infoText}>Runtime: {updateInfo.runtimeVersion || '-'}</Text>
-          </View>
-        )}
-
-        {progress !== null && (
-          <View style={styles.progressContainer}>
-            <Text style={styles.progressText}>Downloading: {Math.round(progress * 100)}%</Text>
-            <View style={styles.progressBar}>
-              <View style={[styles.progress, { width: `${Math.round(progress * 100)}%` }]} />
-            </View>
-          </View>
-        )}
-
-        {lastCheckTime && (
-          <Text style={styles.infoText}>
-            Last Check: {lastCheckTime.toLocaleString()}
-          </Text>
-        )}
+        <Text style={styles.title}>Update Status</Text>
+        <Text style={styles.status}>{status}</Text>
+        {loading && <ActivityIndicator style={styles.loader} size="small" />}
+        <Text style={styles.message}>{message}</Text>
       </View>
 
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity
-          style={styles.button}
-          onPress={checkForUpdates}
-          disabled={isChecking}>
-          <Text style={styles.buttonText}>Check for Updates</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, !isUpdateAvailable && styles.buttonDisabled]}
+      <View style={styles.actions}>
+        <Button title="Check for Updates" onPress={checkForUpdates} />
+        <View style={styles.buttonSpacer} />
+        <Button
+          title="Download Update"
           onPress={downloadUpdate}
-          disabled={!isUpdateAvailable || progress !== null}>
-          <Text style={styles.buttonText}>Download Update</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, progress !== 1 && styles.buttonDisabled]}
+          disabled={status !== 'Available'}
+        />
+        <View style={styles.buttonSpacer} />
+        <Button
+          title="Apply Update"
           onPress={applyUpdate}
-          disabled={progress !== 1}>
-          <Text style={styles.buttonText}>Apply Update</Text>
-        </TouchableOpacity>
+          disabled={status !== 'Downloaded'}
+        />
       </View>
-    </ScrollView>
+
+      <View style={styles.eventsContainer}>
+        <Text style={styles.title}>Event Log</Text>
+        <ScrollView style={styles.events}>
+          {events.map((event, index) => (
+            <Text key={index} style={styles.eventLog}>{event}</Text>
+          ))}
+        </ScrollView>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    padding: 20,
     backgroundColor: '#f5f5f5',
   },
-  contentContainer: {
-    padding: 20,
+  statusContainer: {
+    marginBottom: 20,
+    padding: 15,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  subtitle: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: '#333',
   },
-  statusContainer: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 20,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
-  statusText: {
-    fontSize: 16,
-    marginBottom: 10,
-  },
-  infoBox: {
-    backgroundColor: '#f0f0f0',
-    borderRadius: 5,
-    padding: 10,
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  infoText: {
-    fontSize: 14,
+  status: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2c7be5',
     marginBottom: 5,
   },
-  errorBox: {
-    backgroundColor: '#ffebee',
-    borderRadius: 5,
-    padding: 10,
-    marginTop: 10,
-    marginBottom: 10,
-  },
-  errorText: {
+  message: {
     fontSize: 14,
-    color: '#d32f2f',
+    color: '#666',
   },
-  buttonContainer: {
-    gap: 10,
-  },
-  button: {
-    backgroundColor: '#3498db',
-    borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
-  },
-  buttonDisabled: {
-    backgroundColor: '#bdc3c7',
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  progressContainer: {
+  loader: {
     marginVertical: 10,
   },
-  progressText: {
-    fontSize: 14,
-    marginBottom: 5,
+  actions: {
+    marginBottom: 20,
   },
-  progressBar: {
+  buttonSpacer: {
     height: 10,
-    backgroundColor: '#e0e0e0',
-    borderRadius: 5,
   },
-  progress: {
-    height: 10,
-    backgroundColor: '#4caf50',
-    borderRadius: 5,
+  eventsContainer: {
+    flex: 1,
+    padding: 15,
+    backgroundColor: 'white',
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  events: {
+    flex: 1,
+  },
+  eventLog: {
+    fontSize: 12,
+    fontFamily: 'monospace',
+    color: '#666',
+    marginBottom: 4,
   },
 });

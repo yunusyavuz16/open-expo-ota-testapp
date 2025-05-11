@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, View, Text, ScrollView } from 'react-native';
-import { useUpdates } from 'openexpoota-client';
+import { StyleSheet, TouchableOpacity, View, Text, ScrollView, ActivityIndicator } from 'react-native';
+import { useAppUpdates } from '../../hooks/useAppUpdates';
+import Constants from 'expo-constants';
 
 export default function UpdatesScreen() {
   const {
@@ -8,8 +9,11 @@ export default function UpdatesScreen() {
     downloadUpdate,
     applyUpdate,
     currentState,
-    updateInfo
-  } = useUpdates();
+    updateInfo,
+    isChecking,
+    error,
+    errorMessage
+  } = useAppUpdates();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
@@ -18,6 +22,21 @@ export default function UpdatesScreen() {
       <View style={styles.statusContainer}>
         <Text style={styles.subtitle}>Update Status</Text>
         <Text style={styles.statusText}>Current State: {currentState || 'idle'}</Text>
+
+        {isChecking && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="small" color="#3498db" />
+            <Text style={styles.loadingText}>Checking for updates...</Text>
+          </View>
+        )}
+
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorTitle}>Error</Text>
+            <Text style={styles.errorText}>{errorMessage || error.message}</Text>
+          </View>
+        )}
+
         {updateInfo && (
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>Channel: {updateInfo.channel || '-'}</Text>
@@ -30,6 +49,13 @@ export default function UpdatesScreen() {
             )}
           </View>
         )}
+      </View>
+
+      <View style={styles.configContainer}>
+        <Text style={styles.subtitle}>Configuration</Text>
+        <Text style={styles.infoText}>App Slug: otaslug</Text>
+        <Text style={styles.infoText}>API URL: http://localhost:3000/api</Text>
+        <Text style={styles.infoText}>Runtime Version: {Constants.expoConfig?.version || '1.0.0'}</Text>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -90,6 +116,20 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
+  configContainer: {
+    backgroundColor: 'white',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
   statusText: {
     fontSize: 16,
     marginBottom: 10,
@@ -103,6 +143,30 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 14,
     marginBottom: 5,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  loadingText: {
+    marginLeft: 10,
+    color: '#3498db',
+  },
+  errorContainer: {
+    backgroundColor: '#ffeeee',
+    borderRadius: 5,
+    padding: 10,
+    marginTop: 10,
+  },
+  errorTitle: {
+    color: '#e74c3c',
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  errorText: {
+    color: '#e74c3c',
+    fontSize: 14,
   },
   buttonContainer: {
     gap: 10,
