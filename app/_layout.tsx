@@ -9,7 +9,7 @@ import { useColorScheme } from '../hooks/useColorScheme';
 // Initialize the updates system
 const updatesConfig: SelfHostedUpdateConfig = {
   backendUrl: 'http://localhost:3000/api',
-  appSlug: 'test-app',
+  appSlug: 'otaslug',
   channel: ReleaseChannel.PRODUCTION,
   checkOnLaunch: false, // We'll handle this manually in the UpdatesScreen
   autoInstall: false,

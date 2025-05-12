@@ -17,7 +17,7 @@ export default function UpdatesScreen() {
     // Initialize the updates client
     const updatesClient = new SelfHostedUpdates({
       backendUrl: 'http://localhost:3000/api',
-      appSlug: 'test-app',
+      appSlug: 'otaslug',
       runtimeVersion: '1.1.0',
       channel: ReleaseChannel.PRODUCTION,
       checkOnLaunch: false, // We'll manually check for updates
