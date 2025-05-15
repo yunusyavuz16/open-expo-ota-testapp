@@ -5537,10 +5537,10 @@ onetime@^2.0.0:
   dependencies:
     mimic-fn "^1.0.0"
 
-open-expo-ota@0.1.8:
-  version "0.1.8"
-  resolved "https://registry.yarnpkg.com/open-expo-ota/-/open-expo-ota-0.1.8.tgz#d92c663ad6209bfc5a17ac4d7394a56a0ec3d37b"
-  integrity sha512-AT1OfGLGHYiDDROXBz9bmbq4+dvKA2yetMyRpgack/RfaHA+9LV8x/tR1wXQhLvYxKxxR641Nac/0mzwCn7Klw==
+open-expo-ota@^0.1.9:
+  version "0.1.9"
+  resolved "https://registry.yarnpkg.com/open-expo-ota/-/open-expo-ota-0.1.9.tgz#5db7ce521e7d6d556cd902553daeb70179ff65a4"
+  integrity sha512-K2VKGhg0zc9aYAgntXOtkHxNRFata54F+BP9idB8XZHcwl2+4uOU1Oe9+WBoueEwtjQ8o2wsMNzppSuGpYLhOg==
   dependencies:
     expo-constants "*"
     expo-updates "*"

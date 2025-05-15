@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import SelfHostedUpdates, { SelfHostedUpdateConfig, UpdateEvent } from 'open-expo-ota';
+import SelfHostedUpdates, { ReleaseChannel, SelfHostedUpdateConfig, UpdateEvent } from 'open-expo-ota';
 import Constants from 'expo-constants';
 import otaConfig from '../ota.config.json';
 
@@ -10,6 +10,7 @@ const runtimeVersion = Constants.expoConfig?.version || '1.0.0';
 export function useAppUpdates() {
   const [isChecking, setIsChecking] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [isDownloadFinished, setIsDownloadFinished] = useState(false);
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [updateManifest, setUpdateManifest] = useState<Record<string, any> | null>(null);
   const [error, setError] = useState<Error | null>(null);
@@ -27,10 +28,12 @@ export function useAppUpdates() {
 
       clientRef.current = new SelfHostedUpdates({
         backendUrl: otaConfig.api,
+        channel: ReleaseChannel.PRODUCTION,
         appSlug: otaConfig.slug,
         runtimeVersion,
         debug: true,
-        checkOnLaunch: false, // We'll handle this manually
+        checkOnLaunch: true,
+        autoInstall: true,
       });
     }
 
@@ -43,21 +46,26 @@ export function useAppUpdates() {
           setIsChecking(true);
           setError(null);
           setErrorMessage(null);
+          setIsDownloadFinished(false);
           break;
 
         case 'updateAvailable':
           setIsChecking(false);
           setIsUpdateAvailable(true);
           setUpdateManifest(event.manifest);
+          setIsDownloadFinished(false);
           break;
 
         case 'updateNotAvailable':
           setIsChecking(false);
+          setIsUpdateAvailable(false);
+          setIsDownloadFinished(false);
           break;
 
         case 'error':
           setIsChecking(false);
           setIsDownloading(false);
+          setIsDownloadFinished(false);
           setError(event.error);
           setErrorMessage(event.error.message);
           console.error("OTA Error:", event.error);
@@ -65,15 +73,19 @@ export function useAppUpdates() {
 
         case 'downloadStarted':
           setIsDownloading(true);
+          setIsDownloadFinished(false);
           break;
 
         case 'downloadFinished':
           setIsDownloading(false);
+          setIsDownloadFinished(true);
           break;
 
         case 'installed':
           setIsUpdateAvailable(false);
           setUpdateManifest(null);
+          setIsDownloadFinished(false);
+          setIsDownloading(false);
           break;
       }
     });
@@ -131,11 +143,13 @@ export function useAppUpdates() {
     isChecking,
     isDownloading,
     isUpdateAvailable,
-    currentState: isUpdateAvailable
-      ? 'updateAvailable'
-      : isDownloading
-        ? 'downloading'
-        : 'idle',
+    currentState: isDownloadFinished
+      ? 'downloadFinished'
+      : isUpdateAvailable
+        ? 'updateAvailable'
+        : isDownloading
+          ? 'downloading'
+          : 'idle',
     updateInfo: updateManifest
       ? {
           channel: updateManifest.channel,
