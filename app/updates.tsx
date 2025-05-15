@@ -6,6 +6,7 @@ import SelfHostedUpdates, {
   UpdateEventListener,
   ReleaseChannel
 } from 'open-expo-ota';
+import Constants from 'expo-constants';
 
 export default function UpdatesScreen() {
   const [status, setStatus] = useState<string>('Idle');
@@ -13,17 +14,23 @@ export default function UpdatesScreen() {
   const [loading, setLoading] = useState<boolean>(false);
   const [events, setEvents] = useState<string[]>([]);
 
+  // Get the app's version from Expo Constants
+  const appVersion = Constants.expoConfig?.version || '1.0.0';
+
   useEffect(() => {
     // Initialize the updates client
     const updatesClient = new SelfHostedUpdates({
       backendUrl: 'http://localhost:3000/api',
       appSlug: 'otaslug',
-      runtimeVersion: '1.1.0',
+      runtimeVersion: appVersion, // Use the current app version
       channel: ReleaseChannel.PRODUCTION,
       checkOnLaunch: false, // We'll manually check for updates
       autoInstall: false,   // We'll manually install updates
       debug: true           // Enable debug logs
     });
+
+    // Log the version for debugging
+    console.log(`App is running version: ${appVersion}`);
 
     // Event listener
     const listener: UpdateEventListener = (event: UpdateEvent) => {
@@ -90,7 +97,7 @@ export default function UpdatesScreen() {
     try {
       // @ts-ignore
       await global.updatesClient.checkForUpdates();
-    } catch (error) {
+    } catch (error: any) {
       setStatus('Error');
       setMessage(`Error checking for updates: ${error.message}`);
     }
@@ -100,7 +107,7 @@ export default function UpdatesScreen() {
     try {
       // @ts-ignore
       await global.updatesClient.downloadUpdate();
-    } catch (error) {
+    } catch (error: any) {
       setStatus('Error');
       setMessage(`Error downloading update: ${error.message}`);
     }
@@ -110,7 +117,7 @@ export default function UpdatesScreen() {
     try {
       // @ts-ignore
       global.updatesClient.applyUpdate();
-    } catch (error) {
+    } catch (error: any) {
       setStatus('Error');
       setMessage(`Error applying update: ${error.message}`);
     }
