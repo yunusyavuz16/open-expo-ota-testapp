@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import SelfHostedUpdates, { ReleaseChannel, SelfHostedUpdateConfig, UpdateEvent } from 'open-expo-ota';
 import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import otaConfig from '../ota.config.json';
 
 // Get the runtime version from expo config
@@ -28,7 +29,7 @@ export function useAppUpdates() {
 
       clientRef.current = new SelfHostedUpdates({
         backendUrl: otaConfig.api,
-        channel: ReleaseChannel.PRODUCTION,
+        channel: ReleaseChannel.DEVELOPMENT,
         appSlug: otaConfig.slug,
         runtimeVersion,
         debug: true,
@@ -89,6 +90,25 @@ export function useAppUpdates() {
           break;
       }
     });
+
+    // Check for stored updates
+    const checkStoredUpdate = async () => {
+      try {
+        const storedUpdate = await AsyncStorage.getItem('__EXPO_GO_UPDATE__');
+        if (storedUpdate) {
+          const updateInfo = JSON.parse(storedUpdate);
+          if (updateInfo.type === 'expo-go-update') {
+            setIsUpdateAvailable(true);
+            setUpdateManifest(updateInfo.manifest);
+            setIsDownloadFinished(true);
+          }
+        }
+      } catch (error) {
+        console.error('Error checking stored update:', error);
+      }
+    };
+
+    checkStoredUpdate();
 
     return () => removeListener();
   }, []);

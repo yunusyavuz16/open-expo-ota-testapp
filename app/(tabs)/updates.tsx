@@ -23,6 +23,18 @@ export default function UpdatesScreen() {
         <Text style={styles.subtitle}>Update Status</Text>
         <Text style={styles.statusText}>Current State: {currentState || 'idle'}</Text>
 
+        {/* Expo Go Notice */}
+        <View style={styles.infoBox}>
+          <Text style={styles.infoTitle}>🚀 Running in Expo Go</Text>
+          <Text style={styles.infoText}>
+            OTA updates are simulated for testing. The system will check for real updates from your server
+            and show the complete flow, but won't actually update the app bundle.
+          </Text>
+          <Text style={styles.infoText}>
+            For real OTA updates, create a development build with: npx expo run:ios
+          </Text>
+        </View>
+
         {isChecking && (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color="#3498db" />
@@ -53,7 +65,7 @@ export default function UpdatesScreen() {
 
       <View style={styles.configContainer}>
         <Text style={styles.subtitle}>Configuration</Text>
-        <Text style={styles.infoText}>App Slug: otaslug</Text>
+        <Text style={styles.infoText}>App Slug: test-app-1747315674782</Text>
         <Text style={styles.infoText}>API URL: http://localhost:3000/api</Text>
         <Text style={styles.infoText}>Runtime Version: {Constants.expoConfig?.version || '1.0.0'}</Text>
       </View>
@@ -143,6 +155,12 @@ const styles = StyleSheet.create({
   infoText: {
     fontSize: 14,
     marginBottom: 5,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    color: '#2c3e50',
   },
   loadingContainer: {
     flexDirection: 'row',
