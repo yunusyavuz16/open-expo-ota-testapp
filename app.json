@@ -1,8 +1,8 @@
 {
   "expo": {
     "name": "test-app",
-    "slug": "test-app",
-    "version": "1.3.0",
+    "slug": "test-app-1747315674782",
+    "version": "1.3.8",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "testapp",
@@ -10,7 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "runtimeVersion": "1.3.0",
+      "runtimeVersion": "1.3.8",
       "bundleIdentifier": "com.yunus1010.testapp",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -22,7 +22,7 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "runtimeVersion": "1.3.0"
+      "runtimeVersion": "1.3.8"
     },
     "web": {
       "bundler": "metro",
@@ -45,12 +45,13 @@
       "typedRoutes": true
     },
     "updates": {
-      "url": "http://localhost:3000/api/manifest/test-app",
-      "enabled": true,
+      "url": "http://localhost:3000/api/manifest/test-app-1747315674782?channel=development&runtimeVersion=1.3.8",
+      "enabled": false,
       "checkAutomatically": "NEVER",
-      "fallbackToCacheTimeout": 0
+      "fallbackToCacheTimeout": 0,
+      "disableAntiBrickingMeasures": true
     },
-    "runtimeVersion": "1.3.0",
+    "runtimeVersion": "1.3.8",
     "extra": {
       "router": {},
       "eas": {

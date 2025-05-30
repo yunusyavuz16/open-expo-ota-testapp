@@ -4,8 +4,21 @@ import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import otaConfig from '../ota.config.json';
 
-// Get the runtime version from expo config
-const runtimeVersion = Constants.expoConfig?.version || '1.0.0';
+let appRuntimeVersion: string | undefined;
+if (Constants.expoConfig?.runtimeVersion && typeof Constants.expoConfig.runtimeVersion === 'string') {
+  appRuntimeVersion = Constants.expoConfig.runtimeVersion;
+} else if (Constants.expoConfig?.runtimeVersion && typeof Constants.expoConfig.runtimeVersion === 'object') {
+  // If it's an object (like a policy), we can't use it directly here.
+  // Log a warning and let the SelfHostedUpdates client use its default (app version).
+  console.warn(
+    `'Constants.expoConfig.runtimeVersion' is an object (${JSON.stringify(
+      Constants.expoConfig.runtimeVersion
+    )}), not a string. Falling back to app version for OTA client.`
+  );
+  appRuntimeVersion = undefined; // Explicitly undefined to let client library handle it
+} else {
+  appRuntimeVersion = undefined; // Let client library handle it (will use app version or default)
+}
 
 // Create a custom hook that wraps the SelfHostedUpdates class
 export function useAppUpdates() {
@@ -16,6 +29,7 @@ export function useAppUpdates() {
   const [updateManifest, setUpdateManifest] = useState<Record<string, any> | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [downloadProgress, setDownloadProgress] = useState<number>(0);
   const clientRef = useRef<SelfHostedUpdates | null>(null);
 
   useEffect(() => {
@@ -24,17 +38,17 @@ export function useAppUpdates() {
       console.log("Initializing OTA client with config:", {
         backendUrl: otaConfig.api,
         appSlug: otaConfig.slug,
-        runtimeVersion
+        runtimeVersion: appRuntimeVersion
       });
-
+      console.log("App runtime version:", appRuntimeVersion);
       clientRef.current = new SelfHostedUpdates({
         backendUrl: otaConfig.api,
         channel: ReleaseChannel.DEVELOPMENT,
         appSlug: otaConfig.slug,
-        runtimeVersion,
+        runtimeVersion: appRuntimeVersion,
         debug: true,
-        checkOnLaunch: true,
-        autoInstall: true,
+        checkOnLaunch: false,
+        autoInstall: false,
       });
     }
 
@@ -75,11 +89,19 @@ export function useAppUpdates() {
         case 'downloadStarted':
           setIsDownloading(true);
           setIsDownloadFinished(false);
+          setDownloadProgress(0);
+          break;
+
+        case 'downloadProgress':
+          if ('progress' in event && typeof event.progress === 'number') {
+            setDownloadProgress(event.progress);
+          }
           break;
 
         case 'downloadFinished':
           setIsDownloading(false);
           setIsDownloadFinished(true);
+          setDownloadProgress(1);
           break;
 
         case 'installed':
@@ -87,6 +109,18 @@ export function useAppUpdates() {
           setUpdateManifest(null);
           setIsDownloadFinished(false);
           setIsDownloading(false);
+          setDownloadProgress(0);
+          break;
+
+        default:
+          // Handle updateReady and other events
+          if ((event as any).type === 'updateReady' && 'manifest' in event) {
+            setIsDownloading(false);
+            setIsDownloadFinished(true);
+            setUpdateManifest((event as any).manifest);
+            setDownloadProgress(1);
+            console.log("Update ready for manual installation:", (event as any).manifest);
+          }
           break;
       }
     });
@@ -163,6 +197,7 @@ export function useAppUpdates() {
     isChecking,
     isDownloading,
     isUpdateAvailable,
+    downloadProgress,
     currentState: isDownloadFinished
       ? 'downloadFinished'
       : isUpdateAvailable

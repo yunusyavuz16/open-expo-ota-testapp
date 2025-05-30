@@ -11,6 +11,8 @@ export default function UpdatesScreen() {
     currentState,
     updateInfo,
     isChecking,
+    isDownloading,
+    downloadProgress,
     error,
     errorMessage
   } = useAppUpdates();
@@ -20,7 +22,7 @@ export default function UpdatesScreen() {
       <Text style={styles.title}>OTA Updates</Text>
 
       <View style={styles.statusContainer}>
-        <Text style={styles.subtitle}>Update Status</Text>
+        <Text style={styles.subtitle}>Update Status12</Text>
         <Text style={styles.statusText}>Current State: {currentState || 'idle'}</Text>
 
         {/* Expo Go Notice */}
@@ -39,6 +41,24 @@ export default function UpdatesScreen() {
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="small" color="#3498db" />
             <Text style={styles.loadingText}>Checking for updates...</Text>
+          </View>
+        )}
+
+        {isDownloading && (
+          <View style={styles.downloadContainer}>
+            <Text style={styles.downloadTitle}>📥 Downloading Update</Text>
+            <Text style={styles.downloadText}>
+              Progress: {Math.round((downloadProgress || 0) * 100)}%
+            </Text>
+            <View style={styles.progressBarContainer}>
+              <View
+                style={[
+                  styles.progressBar,
+                  { width: `${(downloadProgress || 0) * 100}%` }
+                ]}
+              />
+            </View>
+            <ActivityIndicator size="small" color="#27ae60" style={{ marginTop: 10 }} />
           </View>
         )}
 
@@ -61,13 +81,30 @@ export default function UpdatesScreen() {
             )}
           </View>
         )}
+
+        {currentState === 'downloadFinished' && (
+          <View style={styles.successContainer}>
+            <Text style={styles.successTitle}>✅ Update Downloaded</Text>
+            <Text style={styles.successText}>
+              The update has been downloaded successfully. Due to expo-updates configuration limitations,
+              you'll need to manually restart the app to apply the update.
+            </Text>
+            <Text style={styles.successText}>
+              Steps: Close the app completely → Reopen the app → The update will be applied
+            </Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.configContainer}>
         <Text style={styles.subtitle}>Configuration</Text>
         <Text style={styles.infoText}>App Slug: test-app-1747315674782</Text>
         <Text style={styles.infoText}>API URL: http://localhost:3000/api</Text>
-        <Text style={styles.infoText}>Runtime Version: {Constants.expoConfig?.version || '1.0.0'}</Text>
+        <Text style={styles.infoText}>Runtime Version: {
+          typeof Constants.expoConfig?.runtimeVersion === 'string'
+            ? Constants.expoConfig.runtimeVersion
+            : Constants.expoConfig?.version || '1.0.0'
+        }</Text>
       </View>
 
       <View style={styles.buttonContainer}>
@@ -78,10 +115,18 @@ export default function UpdatesScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, currentState !== 'updateAvailable' && styles.buttonDisabled]}
+          style={[
+            styles.button,
+            (currentState !== 'updateAvailable' || isDownloading) && styles.buttonDisabled
+          ]}
           onPress={() => downloadUpdate()}
-          disabled={currentState !== 'updateAvailable'}>
-          <Text style={styles.buttonText}>Download Update</Text>
+          disabled={currentState !== 'updateAvailable' || isDownloading}>
+          <Text style={styles.buttonText}>
+            {isDownloading
+              ? `Downloading... ${Math.round((downloadProgress || 0) * 100)}%`
+              : 'Download Update'
+            }
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -202,5 +247,46 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  successContainer: {
+    backgroundColor: '#dff0d8',
+    borderRadius: 5,
+    padding: 10,
+    marginTop: 10,
+  },
+  successTitle: {
+    color: '#3c763d',
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  successText: {
+    color: '#3c763d',
+    fontSize: 14,
+  },
+  downloadContainer: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 5,
+    padding: 10,
+    marginTop: 10,
+  },
+  downloadTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  downloadText: {
+    fontSize: 14,
+    marginBottom: 5,
+  },
+  progressBarContainer: {
+    height: 10,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 5,
+    marginBottom: 10,
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#27ae60',
+    borderRadius: 5,
   },
 });
