@@ -37,7 +37,7 @@
     "expo-updates": "^0.28.13",
     "expo-web-browser": "~14.1.6",
     "form-data": "^4.0.2",
-    "open-expo-ota": "^0.1.14",
+    "open-expo-ota": "file:../client",
     "openexpoota-cli": "^1.0.12",
     "react": "19.0.0",
     "react-dom": "19.0.0",
