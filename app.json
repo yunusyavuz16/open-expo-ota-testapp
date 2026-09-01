@@ -22,7 +22,8 @@
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
-      "runtimeVersion": "1.3.10"
+      "runtimeVersion": "1.3.10",
+      "package": "com.yunus1010.testapp"
     },
     "web": {
       "bundler": "metro",
@@ -39,7 +40,8 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "./plugins/withAndroidLocalhostCleartext"
     ],
     "experiments": {
       "typedRoutes": true

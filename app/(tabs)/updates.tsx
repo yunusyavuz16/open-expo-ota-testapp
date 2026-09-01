@@ -4,6 +4,7 @@ import { useAppUpdates } from '../../hooks/useAppUpdates';
 import Constants from 'expo-constants';
 
 export default function UpdatesScreen() {
+  const isExpoGo = Constants.appOwnership === 'expo';
   const {
     checkForUpdates,
     downloadUpdate,
@@ -22,20 +23,17 @@ export default function UpdatesScreen() {
       <Text style={styles.title}>OTA Updates</Text>
 
       <View style={styles.statusContainer}>
-        <Text style={styles.subtitle}>Update Status12</Text>
+        <Text style={styles.subtitle}>PROMOTED STAGING → DEVELOPMENT — S22</Text>
         <Text style={styles.statusText}>Current State: {currentState || 'idle'}</Text>
 
-        {/* Expo Go Notice */}
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>🚀 Running in Expo Go</Text>
-          <Text style={styles.infoText}>
-            OTA updates are simulated for testing. The system will check for real updates from your server
-            and show the complete flow, but won't actually update the app bundle.
-          </Text>
-          <Text style={styles.infoText}>
-            For real OTA updates, create a development build with: npx expo run:ios
-          </Text>
-        </View>
+        {isExpoGo && (
+          <View style={styles.infoBox}>
+            <Text style={styles.infoTitle}>🚀 Running in Expo Go</Text>
+            <Text style={styles.infoText}>
+              OTA updates are simulated for testing. Install a release build to exercise expo-updates.
+            </Text>
+          </View>
+        )}
 
         {isChecking && (
           <View style={styles.loadingContainer}>
@@ -86,11 +84,7 @@ export default function UpdatesScreen() {
           <View style={styles.successContainer}>
             <Text style={styles.successTitle}>✅ Update Downloaded</Text>
             <Text style={styles.successText}>
-              The update has been downloaded successfully. Due to expo-updates configuration limitations,
-              you'll need to manually restart the app to apply the update.
-            </Text>
-            <Text style={styles.successText}>
-              Steps: Close the app completely → Reopen the app → The update will be applied
+              The update is ready. Press Apply Update to reload the app with the new bundle.
             </Text>
           </View>
         )}

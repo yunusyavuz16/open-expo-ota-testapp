@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../open-expo-ota-client"
+		},
+		{
+			"path": "../../open-expo-ota-backend"
+		},
+		{
+			"path": "../../open-expo-ota-cli"
+		}
+	],
+	"settings": {}
+}

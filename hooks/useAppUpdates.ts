@@ -176,11 +176,11 @@ export function useAppUpdates() {
   };
 
   // Apply update
-  const applyUpdate = () => {
+  const applyUpdate = async () => {
     try {
       console.log("Applying update...");
       if (clientRef.current) {
-        clientRef.current.applyUpdate();
+        await clientRef.current.applyUpdate();
       }
     } catch (err) {
       console.error("Error in applyUpdate:", err);
